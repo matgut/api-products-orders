@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="{{language}}">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body { font-family: Arial, sans-serif; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    h2 { color: #f4a261; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    {{#if isSpanish}}
+    <h2>📦 Tu pedido está listo</h2>
+    <p>Hola <strong>{{customerName}}</strong>,</p>
+    <p>¡Tu pedido ya está listo para ser recogido o entregado!</p>
+    <p><strong>Fecha de entrega:</strong> {{deliveryDate}}</p>
+    {{else}}
+    <h2>📦 Your order is ready</h2>
+    <p>Hello <strong>{{customerName}}</strong>,</p>
+    <p>Your order is ready for pickup or delivery!</p>
+    <p><strong>Delivery date:</strong> {{deliveryDate}}</p>
+    {{/if}}
+
+    {{#if notes}}
+    <p>
+      {{#if isSpanish}}<strong>Notas:</strong>{{else}}<strong>Notes:</strong>{{/if}}
+      {{notes}}
+    </p>
+    {{/if}}
+
+    <hr />
+    <p style="color:#999;font-size:12px;">{{businessName}}</p>
+  </div>
+</body>
+</html>

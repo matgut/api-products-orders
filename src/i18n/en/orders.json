@@ -1,0 +1,11 @@
+{
+  "created": "Order created successfully",
+  "not_found": "Order not found",
+  "status_updated": "Status updated to {status}",
+  "product_unavailable": "Product {name} is not available",
+  "insufficient_stock": "Insufficient stock for {name}",
+  "invalid_product": "Product {id} does not exist or does not belong to this business",
+  "empty_items": "The order must contain at least one product",
+  "deleted": "Order deleted successfully",
+  "list": "Orders retrieved successfully"
+}

@@ -1,0 +1,16 @@
+{
+  "validation": {
+    "required": "El campo {field} es requerido",
+    "invalid_email": "El correo electrónico no es válido",
+    "min_length": "El campo {field} debe tener al menos {min} caracteres",
+    "max_length": "El campo {field} no puede superar {max} caracteres",
+    "invalid_enum": "Valor no permitido para {field}",
+    "is_number": "El campo {field} debe ser un número",
+    "is_positive": "El campo {field} debe ser positivo",
+    "is_uuid": "El campo {field} debe ser un UUID válido"
+  },
+  "database": {
+    "unique_violation": "Ya existe un registro con ese valor",
+    "connection_error": "Error de conexión con la base de datos"
+  }
+}

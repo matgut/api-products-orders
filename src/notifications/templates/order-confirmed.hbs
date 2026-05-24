@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="{{language}}">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body { font-family: Arial, sans-serif; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    h2 { color: #2a9d8f; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th { background: #2a9d8f; color: #fff; padding: 8px; text-align: left; }
+    td { padding: 8px; border-bottom: 1px solid #ddd; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    {{#if isSpanish}}
+    <h2>✅ Tu pedido fue confirmado</h2>
+    <p>Hola <strong>{{customerName}}</strong>,</p>
+    <p>Nos complace informarte que tu pedido ha sido <strong>confirmado</strong>.</p>
+    <p><strong>Fecha de entrega estimada:</strong> {{deliveryDate}}</p>
+    {{else}}
+    <h2>✅ Your order has been confirmed</h2>
+    <p>Hello <strong>{{customerName}}</strong>,</p>
+    <p>We're pleased to inform you that your order has been <strong>confirmed</strong>.</p>
+    <p><strong>Estimated delivery date:</strong> {{deliveryDate}}</p>
+    {{/if}}
+
+    <table>
+      <thead>
+        <tr>
+          {{#if isSpanish}}
+          <th>Producto</th><th>Cant.</th><th>Precio unit.</th>
+          {{else}}
+          <th>Product</th><th>Qty.</th><th>Unit price</th>
+          {{/if}}
+        </tr>
+      </thead>
+      <tbody>
+        {{#each items}}
+        <tr>
+          <td>{{this.productNameSnapshot}}</td>
+          <td>{{this.quantity}}</td>
+          <td>${{this.unitPrice}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+
+    <p style="margin-top:16px;font-weight:bold;">
+      {{#if isSpanish}}Total{{else}}Total{{/if}}: ${{total}}
+    </p>
+
+    {{#if notes}}
+    <p>
+      {{#if isSpanish}}<strong>Notas:</strong>{{else}}<strong>Notes:</strong>{{/if}}
+      {{notes}}
+    </p>
+    {{/if}}
+
+    <hr />
+    <p style="color:#999;font-size:12px;">{{businessName}}</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "hello": "Hello",
+  "success": "Operation successful",
+  "deleted": "Deleted successfully",
+  "updated": "Updated successfully",
+  "created": "Created successfully",
+  "not_found": "Resource not found",
+  "unauthorized": "Unauthorized",
+  "forbidden": "Access denied",
+  "bad_request": "Invalid request",
+  "internal_error": "Internal server error",
+  "conflict": "A resource with those details already exists",
+  "pagination": {
+    "invalid_page": "Page must be a positive number",
+    "invalid_limit": "Limit must be a number between 1 and 100"
+  }
+}

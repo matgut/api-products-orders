@@ -1,0 +1,10 @@
+{
+  "not_found": "Product not found",
+  "created": "Product created successfully",
+  "updated": "Product updated successfully",
+  "deleted": "Product deleted successfully",
+  "list": "Products retrieved successfully",
+  "image_uploaded": "Product image updated successfully",
+  "unavailable": "Product is not available",
+  "translation_required": "Translation is required for all supported languages"
+}
