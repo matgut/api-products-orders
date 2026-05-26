@@ -11,6 +11,13 @@ Registro de cambios funcionales y despliegues a producción del proyecto.
 ## Entradas
 
 ### 2026-05-26
+- Versión: `v0.0.1`
+- Cambios:
+  - Configuración inicial de NestJS con TypeORM, i18n, Mailer, Cloudinary y seguridad base.
+  - Integración de logging estructurado con Pino y trazabilidad por `requestId`.
+  - Protección básica con Helmet, rate limiting en login y validación de archivos.
+
+### 2026-05-26
 - Versión: `v0.0.2`
 - Cambios:
   - Integración de logging estructurado con Pino y nestjs-pino.
@@ -19,8 +26,7 @@ Registro de cambios funcionales y despliegues a producción del proyecto.
   - Eliminación de `console.log` y normalización de logs de servicios y seeder.
 
 ### 2026-05-26
-- Versión: `v0.0.1`
+- Versión: `v0.0.3`
 - Cambios:
-  - Configuración inicial de NestJS con TypeORM, i18n, Mailer, Cloudinary y seguridad base.
-  - Integración de logging estructurado con Pino y trazabilidad por `requestId`.
-  - Protección básica con Helmet, rate limiting en login y validación de archivos.
+  - fix:  error in start app.
+

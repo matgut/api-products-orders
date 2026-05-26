@@ -1,5 +1,5 @@
 import { MailerModule } from '@nestjs-modules/mailer';
-import { Module } from '@nestjs/common';
+import { Module, RequestMethod } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -36,6 +36,7 @@ import { UsersModule } from './users/users.module';
     LoggerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
+        forRoutes: [{ path: '*path', method: RequestMethod.ALL }],
         pinoHttp: buildPinoHttpOptions({
           NODE_ENV: config.get<string>('NODE_ENV'),
           LOG_LEVEL: config.get<string>('LOG_LEVEL'),
@@ -54,6 +55,7 @@ import { UsersModule } from './users/users.module';
     I18nModule.forRootAsync({
       useFactory: () => ({
         fallbackLanguage: 'es',
+        disableMiddleware: true,
         loaderOptions: {
           path: join(__dirname, '/i18n/'),
           watch: true,

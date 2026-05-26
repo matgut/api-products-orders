@@ -6,7 +6,7 @@ import {
   I18nValidationExceptionFilter,
   I18nValidationPipe,
 } from 'nestjs-i18n';
-import { PinoLogger } from 'nestjs-pino';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -14,7 +14,8 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
-  app.useLogger(app.get(PinoLogger));
+  const logger = app.get(Logger);
+  app.useLogger(logger);
 
   app.use(helmet());
 
@@ -74,8 +75,7 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 
-  const logger = app.get(PinoLogger);
-  logger.info(
+  logger.log(
     { port, baseUrl: `http://localhost:${port}/api/v1`, swaggerUrl: `http://localhost:${port}/api/docs` },
     'Application started',
   );
