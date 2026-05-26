@@ -1,24 +1,26 @@
 import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Param,
-    ParseIntPipe,
-    ParseUUIDPipe,
-    Patch,
-    Post,
-    Query,
-    UseGuards,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
-    ApiBearerAuth,
-    ApiOperation,
-    ApiQuery,
-    ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
 import { I18nLang } from 'nestjs-i18n';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { User } from '../users/entities/user.entity';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -54,8 +56,12 @@ export class CategoriesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Crear categoría' })
-  create(@Body() dto: CreateCategoryDto, @I18nLang() lang: string) {
-    return this.categoriesService.create(dto, lang);
+  create(
+    @Body() dto: CreateCategoryDto,
+    @I18nLang() lang: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.categoriesService.create(dto, lang, user);
   }
 
   @Patch(':id')
@@ -66,15 +72,20 @@ export class CategoriesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateCategoryDto,
     @I18nLang() lang: string,
+    @CurrentUser() user: User,
   ) {
-    return this.categoriesService.update(id, dto, lang);
+    return this.categoriesService.update(id, dto, lang, user);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Eliminar categoría' })
-  remove(@Param('id', ParseUUIDPipe) id: string, @I18nLang() lang: string) {
-    return this.categoriesService.remove(id, lang);
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @I18nLang() lang: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.categoriesService.remove(id, lang, user);
   }
 }

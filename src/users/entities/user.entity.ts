@@ -31,6 +31,9 @@ export class User {
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
 
+  @Column({ name: 'business_id', nullable: true, type: 'uuid' })
+  businessId!: string | null;
+
   @Column({
     name: 'preferred_language',
     type: 'enum',

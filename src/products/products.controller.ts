@@ -1,32 +1,52 @@
 import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Param,
-    ParseIntPipe,
-    ParseUUIDPipe,
-    Patch,
-    Post,
-    Query,
-    UploadedFile,
-    UseGuards,
-    UseInterceptors,
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
-    ApiBearerAuth,
-    ApiConsumes,
-    ApiOperation,
-    ApiQuery,
-    ApiTags,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
 import { memoryStorage } from 'multer';
 import { I18nLang } from 'nestjs-i18n';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { User } from '../users/entities/user.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductsService } from './products.service';
+
+const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+const imageFileFilter = (
+  _req: Express.Request,
+  file: Express.Multer.File,
+  callback: (error: Error | null, acceptFile: boolean) => void,
+) => {
+  if (!ALLOWED_IMAGE_MIMES.includes(file.mimetype)) {
+    return callback(
+      new BadRequestException('Only JPEG, PNG and WebP images are allowed'),
+      false,
+    );
+  }
+  callback(null, true);
+};
 
 @ApiTags('Products')
 @Controller('products')
@@ -72,8 +92,12 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Crear producto' })
-  create(@Body() dto: CreateProductDto, @I18nLang() lang: string) {
-    return this.productsService.create(dto, lang);
+  create(
+    @Body() dto: CreateProductDto,
+    @I18nLang() lang: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.productsService.create(dto, lang, user);
   }
 
   @Patch(':id')
@@ -84,16 +108,21 @@ export class ProductsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateProductDto,
     @I18nLang() lang: string,
+    @CurrentUser() user: User,
   ) {
-    return this.productsService.update(id, dto, lang);
+    return this.productsService.update(id, dto, lang, user);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Eliminar producto' })
-  remove(@Param('id', ParseUUIDPipe) id: string, @I18nLang() lang: string) {
-    return this.productsService.remove(id, lang);
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @I18nLang() lang: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.productsService.remove(id, lang, user);
   }
 
   @Post(':id/image')
@@ -101,12 +130,17 @@ export class ProductsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Subir imagen de producto' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('file', {
+    storage: memoryStorage(),
+    limits: { fileSize: MAX_IMAGE_SIZE },
+    fileFilter: imageFileFilter,
+  }))
   uploadImage(
     @Param('id', ParseUUIDPipe) id: string,
     @UploadedFile() file: Express.Multer.File,
     @I18nLang() lang: string,
+    @CurrentUser() user: User,
   ) {
-    return this.productsService.uploadImage(id, file, lang);
+    return this.productsService.uploadImage(id, file, lang, user);
   }
 }

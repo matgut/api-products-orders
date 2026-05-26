@@ -1,25 +1,27 @@
 import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Param,
-    ParseIntPipe,
-    ParseUUIDPipe,
-    Patch,
-    Post,
-    Query,
-    UseGuards,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
-    ApiBearerAuth,
-    ApiOperation,
-    ApiQuery,
-    ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
 import { I18nLang } from 'nestjs-i18n';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OrderStatus } from '../common/enums';
+import { User } from '../users/entities/user.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrdersService } from './orders.service';
@@ -60,10 +62,12 @@ export class OrdersController {
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 10,
     @I18nLang() lang: string,
+    @CurrentUser() user: User,
   ) {
     return this.ordersService.findAll(
       businessId,
       lang,
+      user,
       status,
       date,
       phone,
@@ -76,8 +80,12 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtener pedido por id' })
-  findOne(@Param('id', ParseUUIDPipe) id: string, @I18nLang() lang: string) {
-    return this.ordersService.findOne(id, lang);
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @I18nLang() lang: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.ordersService.findOne(id, lang, user);
   }
 
   @Patch(':id/status')
@@ -88,15 +96,20 @@ export class OrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateOrderStatusDto,
     @I18nLang() lang: string,
+    @CurrentUser() user: User,
   ) {
-    return this.ordersService.updateStatus(id, dto, lang);
+    return this.ordersService.updateStatus(id, dto, lang, user);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Eliminar pedido' })
-  remove(@Param('id', ParseUUIDPipe) id: string, @I18nLang() lang: string) {
-    return this.ordersService.remove(id, lang);
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @I18nLang() lang: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.ordersService.remove(id, lang, user);
   }
 }

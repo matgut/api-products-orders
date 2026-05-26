@@ -1,5 +1,6 @@
 import {
     BadRequestException,
+    ForbiddenException,
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
@@ -7,11 +8,13 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomBytes } from 'crypto';
 import { I18nService } from 'nestjs-i18n';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { Repository } from 'typeorm';
 import { Business } from '../business/entities/business.entity';
-import { Language, OrderStatus } from '../common/enums';
+import { Language, OrderStatus, Role } from '../common/enums';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Product } from '../products/entities/product.entity';
+import { User } from '../users/entities/user.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderItem } from './entities/order-item.entity';
@@ -30,6 +33,8 @@ export class OrdersService {
   }
 
   constructor(
+    @InjectPinoLogger(OrdersService.name)
+    private readonly logger: PinoLogger,
     @InjectRepository(Order)
     private readonly ordersRepository: Repository<Order>,
     @InjectRepository(OrderItem)
@@ -140,7 +145,14 @@ export class OrdersService {
       this.notificationsService
         .notifyNewOrder(saved, business)
         .catch((err: unknown) => {
-          console.error('Error sending new order notification:', err);
+          this.logger.error(
+            {
+              orderId: saved.id,
+              businessId: saved.businessId,
+              error: err instanceof Error ? err.message : String(err),
+            },
+            'Failed to send new order notification',
+          );
         });
     });
 
@@ -156,12 +168,16 @@ export class OrdersService {
   async findAll(
     businessId: string,
     lang: string,
+    currentUser: User,
     status?: OrderStatus,
     date?: string,
     phone?: string,
     page = 1,
     limit = 10,
   ) {
+    if (currentUser.role !== Role.SUPER_ADMIN && currentUser.businessId !== businessId) {
+      throw new ForbiddenException();
+    }
     const qb = this.ordersRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'item')
@@ -192,7 +208,7 @@ export class OrdersService {
     };
   }
 
-  async findOne(id: string, lang: string) {
+  async findOne(id: string, lang: string, currentUser: User) {
     const order = await this.ordersRepository.findOne({
       where: { id },
       relations: { items: true, business: true },
@@ -204,6 +220,10 @@ export class OrdersService {
       );
     }
 
+    if (currentUser.role !== Role.SUPER_ADMIN && currentUser.businessId !== order.businessId) {
+      throw new ForbiddenException();
+    }
+
     return { data: order };
   }
 
@@ -211,6 +231,7 @@ export class OrdersService {
     id: string,
     dto: UpdateOrderStatusDto,
     lang: string,
+    currentUser: User,
   ) {
     const order = await this.ordersRepository.findOne({
       where: { id },
@@ -221,6 +242,10 @@ export class OrdersService {
       throw new NotFoundException(
         await this.i18n.translate('orders.not_found', { lang }),
       );
+    }
+
+    if (currentUser.role !== Role.SUPER_ADMIN && currentUser.businessId !== order.businessId) {
+      throw new ForbiddenException();
     }
 
     const business = await this.businessRepository.findOne({
@@ -241,7 +266,15 @@ export class OrdersService {
         this.notificationsService
           .notifyCustomer(saved, business, event)
           .catch((err: unknown) => {
-            console.error('Error sending customer notification:', err);
+            this.logger.error(
+              {
+                orderId: saved.id,
+                businessId: saved.businessId,
+                event,
+                error: err instanceof Error ? err.message : String(err),
+              },
+              'Failed to send customer notification',
+            );
           });
       });
     }
@@ -255,13 +288,17 @@ export class OrdersService {
     };
   }
 
-  async remove(id: string, lang: string) {
+  async remove(id: string, lang: string, currentUser: User) {
     const order = await this.ordersRepository.findOne({ where: { id } });
 
     if (!order) {
       throw new NotFoundException(
-        await this.i18n.translate('orders.not_found', { lang }),
+        await this.i18n.translate('orders.deleted', { lang }),
       );
+    }
+
+    if (currentUser.role !== Role.SUPER_ADMIN && currentUser.businessId !== order.businessId) {
+      throw new ForbiddenException();
     }
 
     await this.ordersRepository.remove(order);

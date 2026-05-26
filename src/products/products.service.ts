@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { v2 as cloudinary } from 'cloudinary';
 import { I18nService } from 'nestjs-i18n';
 import { Repository } from 'typeorm';
-import { Language } from '../common/enums';
+import { Language, Role } from '../common/enums';
+import { User } from '../users/entities/user.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductTranslation } from './entities/product-translation.entity';
@@ -27,7 +28,11 @@ export class ProductsService {
     });
   }
 
-  async create(dto: CreateProductDto, lang: string) {
+  async create(dto: CreateProductDto, lang: string, currentUser: User) {
+    if (currentUser.role !== Role.SUPER_ADMIN && currentUser.businessId !== dto.businessId) {
+      throw new ForbiddenException();
+    }
+
     const product = this.productsRepository.create({
       businessId: dto.businessId,
       categoryId: dto.categoryId,
@@ -126,7 +131,7 @@ export class ProductsService {
     };
   }
 
-  async update(id: string, dto: UpdateProductDto, lang: string) {
+  async update(id: string, dto: UpdateProductDto, lang: string, currentUser: User) {
     const product = await this.productsRepository.findOne({
       where: { id },
       relations: { translations: true },
@@ -136,6 +141,10 @@ export class ProductsService {
       throw new NotFoundException(
         await this.i18n.translate('products.not_found', { lang }),
       );
+    }
+
+    if (currentUser.role !== Role.SUPER_ADMIN && currentUser.businessId !== product.businessId) {
+      throw new ForbiddenException();
     }
 
     const { translations, ...rest } = dto;
@@ -156,13 +165,17 @@ export class ProductsService {
     };
   }
 
-  async remove(id: string, lang: string) {
+  async remove(id: string, lang: string, currentUser: User) {
     const product = await this.productsRepository.findOne({ where: { id } });
 
     if (!product) {
       throw new NotFoundException(
         await this.i18n.translate('products.not_found', { lang }),
       );
+    }
+
+    if (currentUser.role !== Role.SUPER_ADMIN && currentUser.businessId !== product.businessId) {
+      throw new ForbiddenException();
     }
 
     await this.productsRepository.remove(product);
@@ -173,13 +186,17 @@ export class ProductsService {
     };
   }
 
-  async uploadImage(id: string, file: Express.Multer.File, lang: string) {
+  async uploadImage(id: string, file: Express.Multer.File, lang: string, currentUser: User) {
     const product = await this.productsRepository.findOne({ where: { id } });
 
     if (!product) {
       throw new NotFoundException(
         await this.i18n.translate('products.not_found', { lang }),
       );
+    }
+
+    if (currentUser.role !== Role.SUPER_ADMIN && currentUser.businessId !== product.businessId) {
+      throw new ForbiddenException();
     }
 
     const result = await new Promise<{ secure_url: string }>(

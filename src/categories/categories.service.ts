@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { I18nService } from 'nestjs-i18n';
 import { Repository } from 'typeorm';
-import { Language } from '../common/enums';
+import { Language, Role } from '../common/enums';
+import { User } from '../users/entities/user.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { CategoryTranslation } from './entities/category-translation.entity';
@@ -18,7 +19,11 @@ export class CategoriesService {
     private readonly i18n: I18nService,
   ) {}
 
-  async create(dto: CreateCategoryDto, lang: string) {
+  async create(dto: CreateCategoryDto, lang: string, currentUser: User) {
+    if (currentUser.role !== Role.SUPER_ADMIN && currentUser.businessId !== dto.businessId) {
+      throw new ForbiddenException();
+    }
+
     const category = this.categoriesRepository.create({
       businessId: dto.businessId,
       translations: dto.translations,
@@ -80,7 +85,7 @@ export class CategoriesService {
     return { data: category };
   }
 
-  async update(id: string, dto: UpdateCategoryDto, lang: string) {
+  async update(id: string, dto: UpdateCategoryDto, lang: string, currentUser: User) {
     const category = await this.categoriesRepository.findOne({
       where: { id },
       relations: { translations: true },
@@ -90,6 +95,10 @@ export class CategoriesService {
       throw new NotFoundException(
         await this.i18n.translate('common.not_found', { lang }),
       );
+    }
+
+    if (currentUser.role !== Role.SUPER_ADMIN && currentUser.businessId !== category.businessId) {
+      throw new ForbiddenException();
     }
 
     if (dto.businessId) {
@@ -112,7 +121,7 @@ export class CategoriesService {
     };
   }
 
-  async remove(id: string, lang: string) {
+  async remove(id: string, lang: string, currentUser: User) {
     const category = await this.categoriesRepository.findOne({
       where: { id },
     });
@@ -121,6 +130,10 @@ export class CategoriesService {
       throw new NotFoundException(
         await this.i18n.translate('common.not_found', { lang }),
       );
+    }
+
+    if (currentUser.role !== Role.SUPER_ADMIN && currentUser.businessId !== category.businessId) {
+      throw new ForbiddenException();
     }
 
     await this.categoriesRepository.remove(category);

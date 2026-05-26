@@ -1,24 +1,26 @@
 import { MailerService } from '@nestjs-modules/mailer';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import * as twilio from 'twilio';
 import { Repository } from 'typeorm';
 import { Business } from '../business/entities/business.entity';
 import {
-    Language,
-    NotificationStatus,
-    NotificationType,
+  Language,
+  NotificationStatus,
+  NotificationType,
 } from '../common/enums';
 import { Order } from '../orders/entities/order.entity';
 import { NotificationLog } from './entities/notification-log.entity';
 
 @Injectable()
 export class NotificationsService {
-  private readonly logger = new Logger(NotificationsService.name);
   private readonly twilioClient: twilio.Twilio | null;
 
   constructor(
+    @InjectPinoLogger(NotificationsService.name)
+    private readonly logger: PinoLogger,
     @InjectRepository(NotificationLog)
     private readonly notificationLogRepository: Repository<NotificationLog>,
     private readonly mailerService: MailerService,
@@ -143,7 +145,15 @@ export class NotificationsService {
       log.errorMessage =
         error instanceof Error ? error.message : String(error);
       await this.notificationLogRepository.save(log);
-      this.logger.error(`Failed to send email to ${to}: ${log.errorMessage}`);
+      this.logger.error(
+        {
+          recipient: to,
+          notificationType: type,
+          orderId: order.id,
+          errorMessage: log.errorMessage,
+        },
+        'Failed to send email notification',
+      );
     }
   }
 
@@ -177,7 +187,13 @@ export class NotificationsService {
         error instanceof Error ? error.message : String(error);
       await this.notificationLogRepository.save(log);
       this.logger.error(
-        `Failed to send WhatsApp to ${to}: ${log.errorMessage}`,
+        {
+          recipient: to,
+          notificationType: NotificationType.WHATSAPP,
+          orderId: order.id,
+          errorMessage: log.errorMessage,
+        },
+        'Failed to send WhatsApp notification',
       );
     }
   }

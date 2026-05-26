@@ -1,24 +1,25 @@
 import {
-    Body,
-    Controller,
-    Get,
-    Param,
-    ParseIntPipe,
-    ParseUUIDPipe,
-    Patch,
-    Post,
-    Query,
-    UploadedFile,
-    UseGuards,
-    UseInterceptors,
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
-    ApiBearerAuth,
-    ApiConsumes,
-    ApiOperation,
-    ApiQuery,
-    ApiTags,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
 import { memoryStorage } from 'multer';
 import { I18nLang } from 'nestjs-i18n';
@@ -29,6 +30,23 @@ import { Role } from '../common/enums';
 import { BusinessService } from './business.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
+
+const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_LOGO_SIZE = 5 * 1024 * 1024; // 5 MB
+
+const imageFileFilter = (
+  _req: Express.Request,
+  file: Express.Multer.File,
+  callback: (error: Error | null, acceptFile: boolean) => void,
+) => {
+  if (!ALLOWED_IMAGE_MIMES.includes(file.mimetype)) {
+    return callback(
+      new BadRequestException('Only JPEG, PNG and WebP images are allowed'),
+      false,
+    );
+  }
+  callback(null, true);
+};
 
 @ApiTags('Business')
 @Controller('business')
@@ -81,7 +99,11 @@ export class BusinessController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Subir logo del negocio' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @UseInterceptors(FileInterceptor('file', {
+    storage: memoryStorage(),
+    limits: { fileSize: MAX_LOGO_SIZE },
+    fileFilter: imageFileFilter,
+  }))
   uploadLogo(
     @Param('id', ParseUUIDPipe) id: string,
     @UploadedFile() file: Express.Multer.File,

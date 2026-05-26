@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { I18nService } from 'nestjs-i18n';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { IsNull, Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
@@ -26,6 +27,8 @@ export class AuthService implements OnModuleInit {
   private dummyHash!: string;
 
   constructor(
+    @InjectPinoLogger(AuthService.name)
+    private readonly logger: PinoLogger,
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
     @InjectRepository(RefreshToken)
@@ -50,6 +53,14 @@ export class AuthService implements OnModuleInit {
     const isMatch = await bcrypt.compare(dto.password, hashToCheck);
 
     if (!user || !isMatch) {
+      this.logger.warn(
+        {
+          email: dto.email,
+          foundUser: Boolean(user),
+          requestContext: 'auth.login',
+        },
+        'Failed login attempt',
+      );
       throw new UnauthorizedException(
         await this.i18n.translate('auth.invalid_credentials', { lang }),
       );

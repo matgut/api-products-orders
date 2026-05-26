@@ -2,10 +2,19 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
+import pino from 'pino';
 import { Repository } from 'typeorm';
 import { AppModule } from '../../app.module';
 import { Language, Role } from '../../common/enums';
 import { User } from '../../users/entities/user.entity';
+
+const logger = pino({
+  level: process.env.LOG_LEVEL ?? 'info',
+  redact: {
+    censor: '[REDACTED]',
+    paths: ['password'],
+  },
+});
 
 async function seed() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -19,7 +28,7 @@ async function seed() {
   const existing = await usersRepository.findOne({ where: { email } });
 
   if (existing) {
-    console.log(`Super admin already exists: ${email}`);
+    logger.info({ email }, 'Super admin already exists');
     await app.close();
     return;
   }
@@ -35,12 +44,12 @@ async function seed() {
   });
 
   await usersRepository.save(user);
-  console.log(`✅ Super admin created: ${email}`);
+  logger.info({ email, role: Role.SUPER_ADMIN }, 'Super admin created');
 
   await app.close();
 }
 
 seed().catch((err: unknown) => {
-  console.error('Seeder failed:', err);
+  logger.error({ error: err instanceof Error ? err.message : String(err) }, 'Seeder failed');
   process.exit(1);
 });
