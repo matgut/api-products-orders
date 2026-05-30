@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { v2 as cloudinary } from 'cloudinary';
@@ -51,12 +51,14 @@ export class ProductsService {
   }
 
   async findAll(
-    businessId: string,
     lang: string,
     categoryId?: string,
     page = 1,
     limit = 10,
+    currentUser?: User,
+    queryBusinessId?: string,
   ) {
+    const businessId = this.resolveBusinessId(currentUser, queryBusinessId);
     const queryLang = Object.values(Language).includes(lang as Language)
       ? (lang as Language)
       : Language.ES;
@@ -227,5 +229,21 @@ export class ProductsService {
       where: { id },
       relations: { translations: true },
     });
+  }
+
+  private resolveBusinessId(user?: User, queryBusinessId?: string): string {
+    if (!user) {
+      if (!queryBusinessId) {
+        throw new BadRequestException('businessId es requerido');
+      }
+      return queryBusinessId;
+    }
+    if (user.role === Role.SUPER_ADMIN) {
+      if (!queryBusinessId) {
+        throw new BadRequestException('businessId es requerido para super_admin');
+      }
+      return queryBusinessId;
+    }
+    return user.businessId as string;
   }
 }

@@ -1,8 +1,9 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { I18nService } from 'nestjs-i18n';
 import { Repository } from 'typeorm';
 import { Language, Role } from '../common/enums';
+import { Product } from '../products/entities/product.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -16,6 +17,8 @@ export class CategoriesService {
     private readonly categoriesRepository: Repository<Category>,
     @InjectRepository(CategoryTranslation)
     private readonly translationsRepository: Repository<CategoryTranslation>,
+    @InjectRepository(Product)
+    private readonly productsRepository: Repository<Product>,
     private readonly i18n: I18nService,
   ) {}
 
@@ -38,6 +41,10 @@ export class CategoriesService {
   }
 
   async findAll(businessId: string, lang: string, page = 1, limit = 10) {
+    if (!businessId) {
+      throw new BadRequestException('businessId is required');
+    }
+
     const queryLang = Object.values(Language).includes(lang as Language)
       ? (lang as Language)
       : Language.ES;
@@ -134,6 +141,16 @@ export class CategoriesService {
 
     if (currentUser.role !== Role.SUPER_ADMIN && currentUser.businessId !== category.businessId) {
       throw new ForbiddenException();
+    }
+
+    const productCount = await this.productsRepository.count({
+      where: { categoryId: id },
+    });
+
+    if (productCount > 0) {
+      throw new ConflictException(
+        `No se puede eliminar: tiene ${productCount} producto(s) asociado(s)`,
+      );
     }
 
     await this.categoriesRepository.remove(category);

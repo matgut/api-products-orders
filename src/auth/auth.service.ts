@@ -19,6 +19,7 @@ interface JwtPayload {
   sub: string;
   email: string;
   role: string;
+  businessId: string | null;
 }
 
 @Injectable()
@@ -170,6 +171,7 @@ export class AuthService implements OnModuleInit {
       sub: user.id,
       email: user.email,
       role: user.role,
+      businessId: user.businessId ?? null,
     };
 
     const accessToken = this.jwtService.sign(payload, {

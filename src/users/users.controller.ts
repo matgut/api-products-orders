@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { I18nLang } from 'nestjs-i18n';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -20,6 +21,7 @@ import { Role } from '../common/enums';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 
 @ApiTags('Users')
@@ -60,11 +62,13 @@ export class UsersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserDto,
     @I18nLang() lang: string,
+    @CurrentUser() currentUser: User,
   ) {
-    return this.usersService.update(id, dto, lang);
+    return this.usersService.update(id, dto, lang, currentUser);
   }
 
   @Patch(':id/password')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({ summary: 'Cambiar contraseña de usuario' })
   changePassword(
     @Param('id', ParseUUIDPipe) id: string,
@@ -79,8 +83,9 @@ export class UsersController {
   toggleActive(
     @Param('id', ParseUUIDPipe) id: string,
     @I18nLang() lang: string,
+    @CurrentUser() currentUser: User,
   ) {
-    return this.usersService.toggleActive(id, lang);
+    return this.usersService.toggleActive(id, lang, currentUser);
   }
 
   @Delete(':id')

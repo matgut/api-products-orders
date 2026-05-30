@@ -1,5 +1,6 @@
 import {
     ConflictException,
+    ForbiddenException,
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
@@ -67,7 +68,9 @@ export class UsersService {
     return { data: user };
   }
 
-  async update(id: string, dto: UpdateUserDto, lang: string) {
+  async update(id: string, dto: UpdateUserDto, lang: string, currentUser: User) {
+    this.assertNotSelf(id, currentUser);
+
     const user = await this.usersRepository.findOne({ where: { id } });
 
     if (!user) {
@@ -118,7 +121,9 @@ export class UsersService {
     };
   }
 
-  async toggleActive(id: string, lang: string) {
+  async toggleActive(id: string, lang: string, currentUser: User) {
+    this.assertNotSelf(id, currentUser);
+
     const user = await this.usersRepository.findOne({ where: { id } });
 
     if (!user) {
@@ -151,5 +156,11 @@ export class UsersService {
       data: null,
       message: await this.i18n.translate('common.deleted', { lang }),
     };
+  }
+
+  private assertNotSelf(targetId: string, currentUser: User): void {
+    if (targetId === currentUser.id) {
+      throw new ForbiddenException('No puedes modificar tu propia cuenta');
+    }
   }
 }

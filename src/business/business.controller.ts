@@ -1,25 +1,25 @@
 import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseIntPipe,
-  ParseUUIDPipe,
-  Patch,
-  Post,
-  Query,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
+    BadRequestException,
+    Body,
+    Controller,
+    Get,
+    Param,
+    ParseIntPipe,
+    ParseUUIDPipe,
+    Patch,
+    Post,
+    Query,
+    UploadedFile,
+    UseGuards,
+    UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
-  ApiBearerAuth,
-  ApiConsumes,
-  ApiOperation,
-  ApiQuery,
-  ApiTags,
+    ApiBearerAuth,
+    ApiConsumes,
+    ApiOperation,
+    ApiQuery,
+    ApiTags,
 } from '@nestjs/swagger';
 import { memoryStorage } from 'multer';
 import { I18nLang } from 'nestjs-i18n';
@@ -54,6 +54,9 @@ export class BusinessController {
   constructor(private readonly businessService: BusinessService) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar negocios' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })

@@ -175,13 +175,12 @@ export class OrdersService {
     page = 1,
     limit = 10,
   ) {
-    if (currentUser.role !== Role.SUPER_ADMIN && currentUser.businessId !== businessId) {
-      throw new ForbiddenException();
-    }
+    const resolvedBusinessId = this.resolveBusinessId(currentUser, businessId);
+
     const qb = this.ordersRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'item')
-      .where('order.businessId = :businessId', { businessId });
+      .where('order.businessId = :businessId', { businessId: resolvedBusinessId });
 
     if (status) {
       qb.andWhere('order.status = :status', { status });
@@ -336,5 +335,63 @@ export class OrdersService {
         })),
       },
     };
+  }
+
+  async exportCsv(filters: {
+    businessId: string;
+    status?: OrderStatus;
+    date?: string;
+  }): Promise<string> {
+    if (!filters.businessId) {
+      throw new BadRequestException('businessId es requerido para exportar');
+    }
+
+    const qb = this.ordersRepository
+      .createQueryBuilder('order')
+      .where('order.businessId = :businessId', { businessId: filters.businessId });
+
+    if (filters.status) {
+      qb.andWhere('order.status = :status', { status: filters.status });
+    }
+    if (filters.date) {
+      qb.andWhere('order.deliveryDate = :date', { date: filters.date });
+    }
+
+    const orders = await qb.orderBy('order.createdAt', 'DESC').getMany();
+
+    const escapeCsv = (value: string | number | null | undefined): string => {
+      const str = String(value ?? '');
+      return str.includes(',') || str.includes('"') || str.includes('\n')
+        ? `"${str.replace(/"/g, '""')}"`
+        : str;
+    };
+
+    const header = 'ID,Cliente,Telefono,Email,Estado,Total,Entrega,Creado\n';
+    const rows = orders
+      .map((o) =>
+        [
+          escapeCsv(o.id),
+          escapeCsv(o.customerName),
+          escapeCsv(o.phone),
+          escapeCsv(o.email),
+          escapeCsv(o.status),
+          escapeCsv(o.total),
+          escapeCsv(o.deliveryDate),
+          escapeCsv(o.createdAt.toISOString()),
+        ].join(','),
+      )
+      .join('\n');
+
+    return header + rows;
+  }
+
+  private resolveBusinessId(user: User, queryBusinessId?: string): string {
+    if (user.role === Role.SUPER_ADMIN) {
+      if (!queryBusinessId) {
+        throw new BadRequestException('businessId es requerido para super_admin');
+      }
+      return queryBusinessId;
+    }
+    return user.businessId as string;
   }
 }

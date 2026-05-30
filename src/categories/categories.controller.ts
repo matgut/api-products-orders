@@ -19,7 +19,10 @@ import {
 } from '@nestjs/swagger';
 import { I18nLang } from 'nestjs-i18n';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Role } from '../common/enums';
 import { User } from '../users/entities/user.entity';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -78,9 +81,10 @@ export class CategoriesController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Eliminar categoría' })
+  @ApiOperation({ summary: 'Eliminar categoría (solo super_admin)' })
   remove(
     @Param('id', ParseUUIDPipe) id: string,
     @I18nLang() lang: string,
