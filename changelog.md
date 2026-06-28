@@ -14,7 +14,7 @@ Registro de cambios funcionales y despliegues a producción del proyecto.
 - Versión: `v0.0.4`
 - Cambios:
   - agregar reset password flow
-  - agregar que admin pued ingresar pedidos
+  - agregar que admin pueda ingresar pedidos
 
 
 ### 2026-05-26
